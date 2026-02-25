@@ -1,6 +1,6 @@
 // Custom API Service
 
-const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://monivoza.onrender.com/api/v1";
+const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://monivoza.onrender.com";
 
 class AuthService {
   constructor() {

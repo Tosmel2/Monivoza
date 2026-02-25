@@ -19,7 +19,7 @@ export default defineConfig({
       '/api': {
         target: 'https://monivoza.onrender.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api/v1'),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

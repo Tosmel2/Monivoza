@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/lib/AuthContext";
 
 const PasswordStrengthIndicator = ({ password }) => {
   const getStrength = (pwd) => {
@@ -45,6 +46,7 @@ const PasswordStrengthIndicator = ({ password }) => {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -94,18 +96,11 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual registration API call using authService
-      // This should use the register function from AuthContext
-      console.log("Registration attempt:", formData);
-
-      // Simulating API call - replace with actual authService.register call
+      await register(formData);
+      setSuccess(true);
       setTimeout(() => {
-        setSuccess(true);
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-        setIsLoading(false);
-      }, 1000);
+        navigate("/login");
+      }, 2000);
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
       setIsLoading(false);
