@@ -22,11 +22,19 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // show the spinner immediately; the delay the user sees is almost
+    // entirely due to the network round‑trip against the backend auth
+    // endpoint. there isn't much we can do on the client side other than
+    // give feedback and disable the button until the promise resolves.
     setIsLoading(true);
 
     try {
       await login(email, password);
-      // Navigation is handled by AuthContext after successful login
+      // navigation is now handled by AuthContext.login which will send the
+      // user straight to their dashboard after the response arrives.
+      // since the component will unmount when the route changes we don't need
+      // to manually reset `isLoading` here.
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       setIsLoading(false);

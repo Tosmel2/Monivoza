@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from '@/lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -67,11 +67,18 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Landing />} />
+      <Route
+        path="/"
+        element={
+          // if a user has already been authenticated, send them straight to
+          // the dashboard instead of showing the landing page again. we use
+          // the same casing as the protected route definition.
+          user ? <Navigate to="/Dashboard" replace /> : <Landing />
+        }
+      />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
-      
 
       {/* Protected Routes */}
       {Object.entries(Pages).map(([path, PageComp]) => (

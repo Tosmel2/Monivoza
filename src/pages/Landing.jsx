@@ -25,7 +25,11 @@ const Landing = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      // the router paths are defined using capitalized page keys, so
+      // redirect accordingly. the login flow now also navigates directly
+      // to the dashboard, but this guard is helpful when a user manually
+      // visits the root url after signing in.
+      navigate('/Dashboard');
     }
   }, [isAuthenticated, navigate]);
 

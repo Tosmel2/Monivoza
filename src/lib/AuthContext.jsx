@@ -39,7 +39,14 @@ export function AuthProvider({ children }) {
       const response = await authService.login(email, password);
       setUser(response.user);
       setAuthError(null);
-      navigate("/");
+
+      // once authentication is successful route the user directly to the
+      // appropriate dashboard instead of landing page. we detect the role so
+      // admins are sent to the admin dashboard while regular customers land on
+      // the normal dashboard.
+      const redirectPath = response.user?.role === "admin" ? "/AdminDashboard" : "/Dashboard";
+      navigate(redirectPath);
+
       return response;
     } catch (error) {
       setAuthError({ type: "login_failed", message: error.message });
