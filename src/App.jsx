@@ -52,7 +52,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const { user, isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -73,12 +73,13 @@ const AuthenticatedApp = () => {
           // if a user has already been authenticated, send them straight to
           // the dashboard instead of showing the landing page again. we use
           // the same casing as the protected route definition.
-          user ? <Navigate to="/Dashboard" replace /> : <Landing />
+          user ? <Navigate to="/dashboard" replace /> : <Landing />
         }
       />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/dashboard" element={<Dashboard />} />
 
       {/* Protected Routes */}
       {Object.entries(Pages).map(([path, PageComp]) => (
