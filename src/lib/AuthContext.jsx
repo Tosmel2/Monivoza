@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
       // appropriate dashboard instead of landing page. we detect the role so
       // admins are sent to the admin dashboard while regular customers land on
       // the normal dashboard.
-      const redirectPath = response.user?.role === "admin" ? "/AdminDashboard" : "/Dashboard";
+      const redirectPath = response.user?.role === "admin" ? "/AdminDashboard" : "/dashboard";
       navigate(redirectPath);
 
       return response;

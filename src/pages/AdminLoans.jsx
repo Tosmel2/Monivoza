@@ -54,25 +54,45 @@ export default function AdminLoans() {
     queryKey: ['admin-loans'],
     queryFn: () => authService.getPendingLoans(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (loans && !Array.isArray(loans)) console.warn('admin-loans not array', loans);
+  }, [loans]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['admin-accounts'],
     queryFn: () => authService.getAccounts(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (accounts && !Array.isArray(accounts)) console.warn('admin-accounts not array', accounts);
+  }, [accounts]);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['admin-transactions'],
     queryFn: () => authService.getTransactions(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (transactions && !Array.isArray(transactions)) console.warn('admin-transactions not array', transactions);
+  }, [transactions]);
 
   const { data: userProfiles = [] } = useQuery({
     queryKey: ['user-loan-profiles'],
     queryFn: () => authService.getAllUsers(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (userProfiles && !Array.isArray(userProfiles)) console.warn('userProfiles not array', userProfiles);
+  }, [userProfiles]);
 
   const approveMutation = useMutation({
     mutationFn: async ({ loanId, data }) => {

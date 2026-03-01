@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getDisplayName, getInitials } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -61,17 +62,27 @@ export default function AdminUsers() {
     queryKey: ['admin-users'],
     queryFn: () => authService.getAllUsers(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (users && !Array.isArray(users)) console.warn('admin-users not array', users);
+  }, [users]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['admin-accounts'],
     queryFn: () => authService.getAccounts(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (accounts && !Array.isArray(accounts)) console.warn('admin-accounts not array', accounts);
+  }, [accounts]);
 
   const filteredUsers = users.filter(u => {
     const matchesSearch = !searchTerm || 
-      u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getDisplayName(u).toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === "all" || u.role === filterRole;
     return matchesSearch && matchesRole;
@@ -81,10 +92,6 @@ export default function AdminUsers() {
     return accounts.filter(a => a.created_by === email);
   };
 
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  };
 
   if (user?.role !== "admin") {
     return (
@@ -154,12 +161,12 @@ export default function AdminUsers() {
                 >
                   <Avatar className="h-12 w-12 border-2 border-slate-200">
                     <AvatarFallback className="bg-linear-to-br from-blue-500 to-blue-600 text-white font-semibold">
-                      {getInitials(u.full_name)}
+                      {getInitials(u)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-900">{u.full_name || "Unknown"}</p>
+                      <p className="font-semibold text-slate-900">{getDisplayName(u) || "Unknown"}</p>
                       <Badge variant="secondary" className={
                         u.role === "admin" 
                           ? "bg-purple-100 text-purple-700" 
@@ -229,11 +236,11 @@ export default function AdminUsers() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16 border-2 border-slate-200">
                   <AvatarFallback className="bg-linear-to-br from-blue-500 to-blue-600 text-white text-xl font-semibold">
-                    {getInitials(selectedUser.full_name)}
+                    {getInitials(selectedUser)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold text-lg text-slate-900">{selectedUser.full_name || "Unknown"}</p>
+                  <p className="font-bold text-lg text-slate-900">{getDisplayName(selectedUser) || "Unknown"}</p>
                   <p className="text-slate-500">{selectedUser.email}</p>
                   <Badge variant="secondary" className={
                     selectedUser.role === "admin" 

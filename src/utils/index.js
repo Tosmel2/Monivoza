@@ -30,3 +30,32 @@ export const validateEmail = (email) => {
 export const validatePassword = (password) => {
   return password.length >= 8;
 };
+
+// derive a human readable display name from a user object
+export const getDisplayName = (user) => {
+  if (!user) return "User";
+  // try several common fields
+  if (user.full_name) return user.full_name;
+  const first = user.firstName || user.first_name || "";
+  const last = user.lastName || user.last_name || "";
+  const combined = `${first} ${last}`.trim();
+  if (combined) return combined;
+  if (user.email) return user.email;
+  return "User";
+};
+
+export const getFirstName = (user) => {
+  const name = getDisplayName(user);
+  return name.split(" ")[0] || "User";
+};
+
+export const getInitials = (user) => {
+  const name = getDisplayName(user);
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};

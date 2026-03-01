@@ -419,7 +419,7 @@ const Landing = () => {
               No hidden fees, no complicated processes – just simple, powerful banking.
             </p>
             <Link to="/login">
-              <Button size="lg" className="bg-white text-teal-600 hover:bg-white/90 text-lg px-8 py-4 h-auto">
+              <Button size="lg" className="bg-slate-700 cursor-pointer hover:text-teal-600 hover:bg-white/90 text-lg px-8 py-4 h-auto">
                 Get Started Now
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

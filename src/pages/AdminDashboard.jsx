@@ -45,25 +45,45 @@ export default function AdminDashboard() {
     queryKey: ['admin-users'],
     queryFn: () => authService.getAllUsers(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (users && !Array.isArray(users)) console.warn("admin-users not array", users);
+  }, [users]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['admin-accounts'],
     queryFn: () => authService.getAccounts(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (accounts && !Array.isArray(accounts)) console.warn("admin-accounts not array", accounts);
+  }, [accounts]);
 
   const { data: loans = [] } = useQuery({
     queryKey: ['admin-loans'],
     queryFn: () => authService.getLoans(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (loans && !Array.isArray(loans)) console.warn("admin-loans not array", loans);
+  }, [loans]);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['admin-transactions'],
     queryFn: () => authService.getTransactions(),
     enabled: user?.role === "admin",
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (transactions && !Array.isArray(transactions)) console.warn("admin-transactions not array", transactions);
+  }, [transactions]);
 
   const totalDeposits = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
   const pendingLoans = loans.filter(l => l.status === "PENDING").length;

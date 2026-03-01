@@ -59,7 +59,12 @@ export default function LoanApply() {
       return Promise.resolve([]);
     },
     enabled: !!user?.email,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (accounts && !Array.isArray(accounts)) console.warn('loanapply accounts not array', accounts);
+  }, [accounts]);
 
   const generateLoanNumber = () => {
     return 'LOAN' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();

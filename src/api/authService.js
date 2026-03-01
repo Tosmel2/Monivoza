@@ -1,6 +1,7 @@
 // Custom API Service
 
-const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://monivoza.onrender.com";
+// const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://monivoza.onrender.com";
+const API_BASE_URL ="https://monivoza.onrender.com";
 
 class AuthService {
   constructor() {
@@ -16,45 +17,99 @@ class AuthService {
     };
   }
 
+  // wrapper around fetch that aborts after `timeout` ms
+  async fetchWithTimeout(url, options = {}, timeout = 20000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    const opts = { ...options, signal: controller.signal };
+    try {
+      const res = await fetch(url, opts);
+      return res;
+    } catch (err) {
+      // Normalize AbortError to a friendly message so callers can show it
+      if (err && err.name === "AbortError") {
+        throw new Error("Request timed out. Please check your network and try again.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
   // Authentication methods
+  // helper used internally to read either JSON or plain text
+  async parseResponse(response) {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      // try to parse JSON, but guard against invalid/malformed bodies
+      try {
+        return await response.json();
+      } catch {
+        // fall through to text fallback
+      }
+    }
+
+    // not JSON or parsing failed – consume as text
+    const text = await response.text();
+    // attempt to convert a text response that *looks* like JSON
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+
   async login(email, password) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        mode: "cors", // explicit, though it's the default for cross‑origin calls
       });
 
+      // parse body once; parseResponse will return an object or a string
+      const body = await this.parseResponse(response);
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Login failed");
+        // some servers return a bare string; try to pull a message property
+        const message =
+          (body && typeof body === "object" && body.message) ||
+          body ||
+          "Login failed";
+        throw new Error(message);
       }
 
-      const data = await response.json();
-      this.token = data.token;
-      this.user = data.user;
-      localStorage.setItem("auth_token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      return data;
+      // success path expects object with token/user
+      this.token = body.token;
+      this.user = body.user;
+      localStorage.setItem("auth_token", body.token);
+      localStorage.setItem("user", JSON.stringify(body.user));
+      return body;
     } catch (error) {
-      throw new Error(error.message);
+      // re‑throw with a plain message so the component can display it
+      throw new Error(error.message || "Login failed");
     }
   }
 
   async register(userData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
+        mode: "cors",
       });
 
+      const body = await this.parseResponse(response);
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Registration failed");
+        const message =
+          (body && typeof body === "object" && body.message) ||
+          body ||
+          "Registration failed";
+        throw new Error(message);
       }
 
-      return await response.json();
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -63,7 +118,7 @@ class AuthService {
   async verify() {
     if (!this.token) return false;
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/auth/verify`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
       return response.ok;
@@ -75,15 +130,19 @@ class AuthService {
   async getUser() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
 
-      if (!response.ok) throw new Error("Failed to fetch user");
-      const data = await response.json();
-      this.user = data;
-      localStorage.setItem("user", JSON.stringify(data));
-      return data;
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch user";
+        throw new Error(message);
+      }
+
+      this.user = body;
+      localStorage.setItem("user", JSON.stringify(body));
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -112,12 +171,16 @@ class AuthService {
   async getAccounts() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/accounts`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/accounts`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch accounts");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch accounts";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -126,12 +189,16 @@ class AuthService {
   async getAccountBalance(accountId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/balance`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/accounts/${accountId}/balance`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch account balance");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch account balance";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -140,14 +207,18 @@ class AuthService {
   async createAccount(accountData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/accounts`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/accounts`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(accountData),
       });
 
-      if (!response.ok) throw new Error("Failed to create account");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to create account";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -157,12 +228,16 @@ class AuthService {
   async getAllUsers() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/users`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch users");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch users";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -171,12 +246,16 @@ class AuthService {
   async getPendingLoans() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/loans/pending`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/loans/pending`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch pending loans");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch pending loans";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -185,12 +264,16 @@ class AuthService {
   async getDashboardStats() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/dashboard/stats`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch dashboard stats";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -199,14 +282,18 @@ class AuthService {
   async updateUserStatus(userId, status) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/users/${userId}/status`, {
         method: "PUT",
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ status }),
       });
 
-      if (!response.ok) throw new Error("Failed to update user status");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to update user status";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -215,13 +302,17 @@ class AuthService {
   async rejectLoan(loanId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/loans/${loanId}/reject`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/loans/${loanId}/reject`, {
         method: "PUT",
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to reject loan");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to reject loan";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -230,13 +321,17 @@ class AuthService {
   async disburseLoan(loanId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/loans/${loanId}/disburse`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/loans/${loanId}/disburse`, {
         method: "PUT",
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to disburse loan");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to disburse loan";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -245,13 +340,17 @@ class AuthService {
   async approveLoan(loanId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/loans/${loanId}/approve`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/admin/loans/${loanId}/approve`, {
         method: "PUT",
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to approve loan");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to approve loan";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -261,12 +360,16 @@ class AuthService {
   async getLoans() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/loans`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/loans`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch loans");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch loans";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -275,12 +378,16 @@ class AuthService {
   async getLoanDetails(loanId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/loans/${loanId}`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/loans/${loanId}`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch loan details");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch loan details";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -289,12 +396,16 @@ class AuthService {
   async getLoanRepayments(loanId) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/loans/${loanId}/repayments`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/loans/${loanId}/repayments`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch loan repayments");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch loan repayments";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -303,14 +414,18 @@ class AuthService {
   async repayLoan(loanId, repaymentData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/loans/${loanId}/repay`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/loans/${loanId}/repay`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(repaymentData),
       });
 
-      if (!response.ok) throw new Error("Failed to repay loan");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to repay loan";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -319,14 +434,18 @@ class AuthService {
   async applyForLoan(loanData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/loans/apply`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/loans/apply`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(loanData),
       });
 
-      if (!response.ok) throw new Error("Failed to apply for loan");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to apply for loan";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -336,12 +455,16 @@ class AuthService {
   async getTransactions() {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/transactions`, {
         headers: this.getAuthHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch transactions");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to fetch transactions";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -350,14 +473,18 @@ class AuthService {
   async withdraw(withdrawData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/withdraw`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/transactions/withdraw`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(withdrawData),
       });
 
-      if (!response.ok) throw new Error("Failed to withdraw");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to withdraw";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -366,14 +493,18 @@ class AuthService {
   async transfer(transferData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/transfer`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/transactions/transfer`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(transferData),
       });
 
-      if (!response.ok) throw new Error("Failed to transfer");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to transfer";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -382,14 +513,18 @@ class AuthService {
   async deposit(depositData) {
     if (!this.token) throw new Error("Not authenticated");
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/deposit`, {
+      const response = await this.fetchWithTimeout(`${API_BASE_URL}/transactions/deposit`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         body: JSON.stringify(depositData),
       });
 
-      if (!response.ok) throw new Error("Failed to deposit");
-      return await response.json();
+      const body = await this.parseResponse(response);
+      if (!response.ok) {
+        const message = (body && typeof body === "object" && body.message) || body || "Failed to deposit";
+        throw new Error(message);
+      }
+      return body;
     } catch (error) {
       throw new Error(error.message);
     }

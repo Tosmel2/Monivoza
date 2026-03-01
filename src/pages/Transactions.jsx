@@ -51,13 +51,23 @@ export default function Transactions() {
     queryKey: ['transactions', user?.email],
     queryFn: () => authService.getTransactions(),
     enabled: !!user?.email,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (transactions && !Array.isArray(transactions)) console.warn('transactions not array', transactions);
+  }, [transactions]);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts', user?.email],
     queryFn: () => authService.getAccounts(),
     enabled: !!user?.email,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
+
+  React.useEffect(() => {
+    if (accounts && !Array.isArray(accounts)) console.warn('accounts not array', accounts);
+  }, [accounts]);
 
   const generateTransactionRef = () => {
     return 'TXN' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();

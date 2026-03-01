@@ -13,6 +13,8 @@ import {
   Save,
   Loader2
 } from "lucide-react";
+// import { getDisplayName, getInitials } from "@/utils";
+import { getDisplayName, getInitials } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -90,7 +92,7 @@ export default function Settings() {
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-slate-900">{user?.full_name || "User"}</h2>
+                <h2 className="text-xl font-bold text-slate-900">{getDisplayName(user)}</h2>
                 <Badge className={
                   user?.role === "admin"
                     ? "bg-purple-100 text-purple-700"
@@ -128,7 +130,7 @@ export default function Settings() {
                 Full Name
               </Label>
               <Input
-                value={user?.full_name || ""}
+                value={getDisplayName(user)}
                 disabled
                 className="bg-slate-50"
               />

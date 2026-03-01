@@ -37,13 +37,20 @@ export default function Accounts() {
   const [newAccount, setNewAccount] = useState({ account_type: "SAVINGS", initialDeposit: "" });
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data = [], isLoading } = useQuery({
     queryKey: ['accounts', user?.email],
     queryFn: () => authService.getAccounts(),
     enabled: !!user?.email,
+    select: (d) => (Array.isArray(d) ? d : []),
   });
 
-  const accounts = data || [];
+  const accounts = data; // already guaranteed to be array
+
+  React.useEffect(() => {
+    if (data && !Array.isArray(data)) {
+      console.warn("Accounts query returned non-array", data);
+    }
+  }, [data]);
 
   const createAccountMutation = useMutation({
     mutationFn: async (data) => {

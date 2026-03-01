@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl, getDisplayName, getInitials } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard,
@@ -45,13 +45,9 @@ export default function Layout({ children, currentPageName }) {
     { name: "Manage Loans", icon: Receipt, page: "AdminLoans" },
   ];
 
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-amber-500 bg-linear-to-br from-slate-50 via-white to-slate-100">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
         <div className="flex items-center justify-between px-4 h-16">
@@ -155,11 +151,11 @@ export default function Layout({ children, currentPageName }) {
                 <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition-colors">
                   <Avatar className="h-10 w-10 border-2 border-teal-500/20">
                     <AvatarFallback className="bg-linear-to-br from-teal-500 to-teal-600 text-white font-semibold">
-                      {getInitials(user?.full_name)}
+                      {getInitials(user)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left">
-                    <p className="font-semibold text-slate-900 text-sm">{user?.full_name || "User"}</p>
+                    <p className="font-semibold text-slate-900 text-sm">{getDisplayName(user)}</p>
                     <p className="text-xs text-slate-500">{user?.email}</p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400" />
