@@ -79,13 +79,12 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/dashboard" element={<Dashboard />} />
 
       {/* Protected Routes */}
       {Object.entries(Pages).map(([path, PageComp]) => (
         <Route
           key={path}
-          path={`/${path}`}
+          path={`/${path.toLowerCase()}`}
           element={
             authError ? (
               authError.type === 'user_not_registered' ? (

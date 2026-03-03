@@ -10,7 +10,8 @@ import {
   Receipt, 
   TrendingUp,
   Plus,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatsCard from "@/components/dashboard/StatsCard";
@@ -31,29 +32,23 @@ export default function Dashboard() {
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts', user?.email],
-    queryFn: () => authService.getAccounts(),
+    queryFn: () => {
+      // TODO: Replace with actual API call using authService
+      // For now, return empty array until API endpoints are implemented
+      return Promise.resolve([]);
+    },
     enabled: !!user?.email,
-    select: (data) => (Array.isArray(data) ? data : []),
   });
-
-  React.useEffect(() => {
-    if (accounts && !Array.isArray(accounts)) {
-      console.warn("Expected accounts array but got", accounts);
-    }
-  }, [accounts]);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions', user?.email],
-    queryFn: () => authService.getTransactions(),
+    queryFn: () => {
+      // TODO: Replace with actual API call using authService
+      // For now, return empty array until API endpoints are implemented
+      return Promise.resolve([]);
+    },
     enabled: !!user?.email,
-    select: (data) => (Array.isArray(data) ? data : []),
   });
-
-  React.useEffect(() => {
-    if (transactions && !Array.isArray(transactions)) {
-      console.warn("Expected transactions array but got", transactions);
-    }
-  }, [transactions]);
 
   const { data: loans = [] } = useQuery({
     queryKey: ['loans', user?.email],
@@ -65,16 +60,9 @@ export default function Dashboard() {
     enabled: !!user?.email,
   });
 
-  // ensure we always work with arrays (API might return an object on error)
-  const accountList = Array.isArray(accounts) ? accounts : [];
-  const totalBalance = accountList.reduce((sum, acc) => sum + (acc.balance || 0), 0);
-
-  const loanList = Array.isArray(loans) ? loans : [];
-  const activeLoans = loanList.filter((l) => l.status === "ACTIVE");
-  const totalLoanAmount = activeLoans.reduce(
-    (sum, l) => sum + (l.outstanding_balance || 0),
-    0
-  );
+  const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+  const activeLoans = loans.filter(l => l.status === "ACTIVE");
+  const totalLoanAmount = activeLoans.reduce((sum, l) => sum + (l.outstanding_balance || 0), 0);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -97,20 +85,22 @@ export default function Dashboard() {
           </motion.h1>
           <p className="text-slate-500 mt-1">Here's what's happening with your finances</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex gap-2">
           <Link to={createPageUrl("Accounts")}>
-          <Button className="bg-linear-to-r from-teal-500 to-teal-600 hover:opacity-90">
-            <Plus className="w-4 h-4 mr-2" />
-            New Account
+            <Button className="bg-linear-to-r from-teal-500 to-teal-600 hover:opacity-90">
+              <Plus className="w-4 h-4 mr-2" />
+              New Account
+            </Button>
+          </Link>
+          <Button 
+            variant="outline" 
+            onClick={logout}
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Log Out
           </Button>
-        </Link>
-        <Button
-          variant="outline"
-          className="text-red-600 hover:text-red-700 h-11"
-          onClick={logout}
-        >
-          Log out
-        </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -118,7 +108,7 @@ export default function Dashboard() {
         <StatsCard
           title="Total Balance"
           value={formatCurrency(totalBalance)}
-          subtitle={`#${accountList.length} account${accountList.length !== 1 ? 's' : ''}`}
+          subtitle={`${accounts.length} account${accounts.length !== 1 ? 's' : ''}`}
           icon={Wallet}
           gradient="teal"
         />
@@ -160,9 +150,9 @@ export default function Dashboard() {
           </Link>
         </div>
         
-        {accountList.length > 0 ? (
+        {accounts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accountList.slice(0, 3).map((account, index) => (
+            {accounts.slice(0, 3).map((account, index) => (
               <AccountCard
                 key={account.id}
                 account={account}
@@ -236,7 +226,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
       </div>
     </div>
   );

@@ -40,12 +40,17 @@ export const getDisplayName = (user) => {
   const last = user.lastName || user.last_name || "";
   const combined = `${first} ${last}`.trim();
   if (combined) return combined;
-  if (user.email) return user.email;
+  if (user.email) {
+    // strip domain extension and any subaddress, return part before @
+    const local = user.email.split("@")[0];
+    return local || user.email;
+  }
   return "User";
 };
 
 export const getFirstName = (user) => {
   const name = getDisplayName(user);
+  // if display name contains email local part, it'll be returned already
   return name.split(" ")[0] || "User";
 };
 

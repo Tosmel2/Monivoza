@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl, getDisplayName, getInitials } from "@/utils";
+import { createPageUrl, getFirstName, getInitials } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard,
@@ -55,7 +55,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-teal-500 to-teal-600 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-slate-900 text-lg">AdnegsBank</span>
+            <span className="font-bold text-slate-900 text-lg">MoniVoza</span>
           </div>
           <Button
             variant="ghost"
@@ -81,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 text-xl tracking-tight">AdnegsBank</span>
+                <span className="font-bold text-slate-900 text-xl tracking-tight">MoniVoza</span>
                 <p className="text-xs text-slate-500">Digital Banking</p>
               </div>
             </div>
@@ -155,8 +155,8 @@ export default function Layout({ children, currentPageName }) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left">
-                    <p className="font-semibold text-slate-900 text-sm">{getDisplayName(user)}</p>
-                    <p className="text-xs text-slate-500">{user?.email}</p>
+                    <p className="font-semibold text-slate-900 text-sm">{getFirstName(user)}</p>
+                    <p className="text-xs text-slate-500">{user?.email || ' '}</p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400" />
                 </button>

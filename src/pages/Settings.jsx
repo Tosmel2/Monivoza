@@ -26,25 +26,17 @@ import { authService } from "@/api/authService";
 export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    phone_number: "",
-    address: "",
-    date_of_birth: "",
-  });
+  const [formData, setFormData] = useState(() => ({
+    phone_number: (typeof window !== 'undefined' && user?.phone_number) ? user.phone_number : "",
+    address: (typeof window !== 'undefined' && user?.address) ? user.address : "",
+    date_of_birth: (typeof window !== 'undefined' && user?.date_of_birth) ? user.date_of_birth : "",
+  }));
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       navigate("/login");
-      return;
     }
-    if (user) {
-      setFormData({
-        phone_number: user?.phone_number || "",
-        address: user?.address || "",
-        date_of_birth: user?.date_of_birth || "",
-      });
-    }
-  }, [user, navigate]);
+  }, [navigate]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
@@ -63,10 +55,7 @@ export default function Settings() {
     updateMutation.mutate(formData);
   };
 
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  };
+
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">

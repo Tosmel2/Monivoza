@@ -30,14 +30,17 @@ import { authService } from "@/api/authService";
 export default function LoanDetails() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loanId, setLoanId] = useState(null);
+  const [loanId, setLoanId] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('id');
+    } catch (e) {
+      return null;
+    }
+  });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setLoanId(params.get('id'));
-    
     // Redirect to login if not authenticated
     if (!authService.isAuthenticated()) {
       navigate("/login");
