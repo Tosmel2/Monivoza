@@ -5,15 +5,37 @@ const Select = ({ children, onValueChange }) => {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
 
+  // normalize children to array and find trigger/content
+  const childArray = React.Children.toArray(children);
+  const triggerChild = childArray.find(
+    (c) => React.isValidElement(c) && (c.type === SelectTrigger || c.type?.displayName === 'SelectTrigger')
+  );
+  const contentChild = childArray.find(
+    (c) => React.isValidElement(c) && (c.type === SelectContent || c.type?.displayName === 'SelectContent')
+  );
+
+  const handleValueChange = (v) => {
+    onValueChange?.(v);
+    setOpen(false);
+  };
+
   return (
     <div className="relative">
       <div
         ref={triggerRef}
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((s) => !s)}
         className="w-full flex h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 cursor-pointer"
       >
-        {React.cloneElement(children, { open, onValueChange: (v) => { onValueChange?.(v); setOpen(false); } })}
+        {triggerChild
+          ? React.isValidElement(triggerChild)
+            ? React.cloneElement(triggerChild, { open })
+            : triggerChild
+          : null}
       </div>
+
+      {contentChild && React.isValidElement(contentChild)
+        ? React.cloneElement(contentChild, { open, onValueChange: handleValueChange })
+        : null}
     </div>
   );
 };

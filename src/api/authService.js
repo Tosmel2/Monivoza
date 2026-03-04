@@ -5,6 +5,11 @@ export const createAuthService = () => {
   let user = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user"))
     : null;
+  // track when the user authenticated for TTL logic
+  let authTimestamp = parseInt(localStorage.getItem("auth_timestamp"), 10) || null;
+
+  // duration in milliseconds before session expires (e.g. 24 hours)
+  const SESSION_TTL = 24 * 60 * 60 * 1000; // 1 day
 
   // ==============================
   // Helpers
@@ -86,9 +91,11 @@ export const createAuthService = () => {
 
     token = body.token;
     user = body.user;
+    authTimestamp = Date.now();
 
     localStorage.setItem("auth_token", body.token);
     localStorage.setItem("user", JSON.stringify(body.user));
+    localStorage.setItem("auth_timestamp", authTimestamp.toString());
 
     return body;
   };
@@ -110,11 +117,21 @@ export const createAuthService = () => {
   const logout = () => {
     token = null;
     user = null;
+    authTimestamp = null;
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
+    localStorage.removeItem("auth_timestamp");
   };
 
-  const isAuthenticated = () => !!token;
+  const isAuthenticated = () => {
+    if (!token) return false;
+    if (authTimestamp && Date.now() - authTimestamp > SESSION_TTL) {
+      // session expired, perform a silent logout
+      logout();
+      return false;
+    }
+    return true;
+  };
   const getToken = () => token;
   const getCurrentUser = () => user;
 

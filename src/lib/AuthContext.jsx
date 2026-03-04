@@ -13,8 +13,12 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
 
+  // initialize auth and set up logout timer reference
+  const logoutTimerRef = React.useRef();
+
   useEffect(() => {
     initializeAuth();
+    return () => clearTimeout(logoutTimerRef.current);
   }, []);
 
   const initializeAuth = async () => {
@@ -23,7 +27,10 @@ export function AuthProvider({ children }) {
         const userData = await authService.getUser();
         setUser(userData);
       } else {
+        // not authenticated or session expired
         setAuthError({ type: "auth_required" });
+        authService.logout();
+        navigate("/");
       }
     } catch (error) {
       console.error("Auth initialization error:", error);
@@ -39,6 +46,18 @@ export function AuthProvider({ children }) {
       const response = await authService.login(email, password);
       setUser(response.user);
       setAuthError(null);
+
+      // schedule auto logout based on session TTL
+      const now = Date.now();
+      const stamp = parseInt(localStorage.getItem("auth_timestamp"), 10) || now;
+      const expiresIn = authService.SESSION_TTL - (now - stamp);
+      if (expiresIn > 0) {
+        clearTimeout(logoutTimerRef.current);
+        logoutTimerRef.current = setTimeout(() => {
+          logout();
+          navigate("/");
+        }, expiresIn);
+      }
 
       // once authentication is successful route the user directly to the
       // appropriate dashboard instead of landing page. we detect the role so
@@ -69,6 +88,7 @@ export function AuthProvider({ children }) {
     authService.logout();
     setUser(null);
     setAuthError(null);
+    clearTimeout(logoutTimerRef.current);
     navigate("/login");
   };
 

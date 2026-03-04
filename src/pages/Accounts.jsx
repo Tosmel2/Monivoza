@@ -139,7 +139,7 @@ export default function Accounts() {
           </div>
           <h3 className="text-xl font-semibold text-slate-900 mb-2">No accounts yet</h3>
           <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-            Create your first bank account to start managing your finances
+            Create your first Monivoza bank account to start managing your finances
           </p>
           <Button 
             onClick={() => setShowCreateModal(true)}
@@ -152,7 +152,7 @@ export default function Accounts() {
       )}
 
       {/* Create Account Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+      <Dialog className="px-12" open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Account</DialogTitle>
