@@ -34,7 +34,6 @@ export default function LoanApply() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
-  const [calculatedValues, setCalculatedValues] = useState(null);
   const [formData, setFormData] = useState({
     loan_type: "PERSONAL",
     principal_amount: 10000,
@@ -53,11 +52,7 @@ export default function LoanApply() {
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts', user?.email],
-    queryFn: () => {
-      // TODO: Replace with actual API call using authService
-      // For now, return empty array until API endpoints are implemented
-      return Promise.resolve([]);
-    },
+    queryFn: () => authService.getAccounts(),
     enabled: !!user?.email,
     select: (d) => (Array.isArray(d) ? d : []),
   });
@@ -65,10 +60,6 @@ export default function LoanApply() {
   React.useEffect(() => {
     if (accounts && !Array.isArray(accounts)) console.warn('loanapply accounts not array', accounts);
   }, [accounts]);
-
-  const generateLoanNumber = () => {
-    return 'LOAN' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();
-  };
 
   const calculateMonthlyPayment = () => {
     const principal = formData.principal_amount;

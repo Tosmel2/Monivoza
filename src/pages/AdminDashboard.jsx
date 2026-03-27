@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 import {
   Users,
   Wallet,
@@ -81,6 +82,12 @@ export default function AdminDashboard() {
     select: (d) => (Array.isArray(d) ? d : []),
   });
 
+  const { data: dashboardStats = {} } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: () => authService.getDashboardStats(),
+    enabled: user?.role === "admin",
+  });
+
   React.useEffect(() => {
     if (transactions && !Array.isArray(transactions)) console.warn("admin-transactions not array", transactions);
   }, [transactions]);
@@ -91,6 +98,12 @@ export default function AdminDashboard() {
   const totalLoanAmount = loans
     .filter(l => l.status === "ACTIVE")
     .reduce((sum, l) => sum + (l.outstanding_balance || 0), 0);
+  const totalUsers = dashboardStats.total_users ?? users.length;
+  const totalAccounts = dashboardStats.total_accounts ?? accounts.length;
+  const statsTotalDeposits = dashboardStats.total_deposits ?? totalDeposits;
+  const statsPendingLoans = dashboardStats.pending_loans ?? pendingLoans;
+  const statsActiveLoans = dashboardStats.active_loans ?? activeLoans;
+  const statsOutstandingLoans = dashboardStats.total_outstanding_loans ?? totalLoanAmount;
 
   // Advanced metrics
   const totalLoansDisbursed = loans
@@ -163,28 +176,28 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Users"
-          value={users.length}
+          value={totalUsers}
           icon={Users}
           gradient="blue"
         />
         <StatsCard
           title="Total Deposits"
-          value={formatCurrency(totalDeposits)}
-          subtitle={`${accounts.length} accounts`}
+          value={formatCurrency(statsTotalDeposits)}
+          subtitle={`${totalAccounts} accounts`}
           icon={Wallet}
           gradient="teal"
         />
         <StatsCard
           title="Pending Loans"
-          value={pendingLoans}
+          value={statsPendingLoans}
           subtitle="Awaiting approval"
           icon={Clock}
           gradient="orange"
         />
         <StatsCard
           title="Active Loans"
-          value={activeLoans}
-          subtitle={formatCurrency(totalLoanAmount)}
+          value={statsActiveLoans}
+          subtitle={formatCurrency(statsOutstandingLoans)}
           icon={Receipt}
           gradient="purple"
         />

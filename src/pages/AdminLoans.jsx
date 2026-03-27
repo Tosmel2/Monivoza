@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 import { authService } from "@/api/authService";
-
-/* global base44 */
 import {
   Receipt,
   Search,
@@ -96,7 +95,10 @@ export default function AdminLoans() {
 
   const approveMutation = useMutation({
     mutationFn: async ({ loanId, data }) => {
-      return authService.approveLoan(loanId);
+      return authService.approveLoan(loanId, {
+        interestRate: data.interestRate ? parseFloat(data.interestRate) : undefined,
+        comments: data.comments || undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-loans'] });
@@ -107,7 +109,7 @@ export default function AdminLoans() {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ loanId, reason }) => {
-      return authService.rejectLoan(loanId);
+      return authService.rejectLoan(loanId, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-loans'] });
@@ -116,13 +118,9 @@ export default function AdminLoans() {
     },
   });
 
-  const generateTransactionRef = () => {
-    return 'TXN' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();
-  };
-
   const disburseMutation = useMutation({
     mutationFn: async ({ loanId, accountId }) => {
-      return authService.disburseLoan(loanId);
+      return authService.disburseLoan(loanId, { accountId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-loans'] });
@@ -163,36 +161,10 @@ export default function AdminLoans() {
     return Math.min(100, Math.max(0, score));
   };
 
-  const userProfileMutation = useMutation({
-    mutationFn: async ({ userEmail, data }) => {
-      const existingProfiles = await base44.entities.UserLoanProfile.filter({ user_email: userEmail });
-      
-      if (existingProfiles.length > 0) {
-        await base44.entities.UserLoanProfile.update(existingProfiles[0].id, data);
-      } else {
-        await base44.entities.UserLoanProfile.create({
-          user_email: userEmail,
-          ...data,
-          credit_score: calculateCreditScore(userEmail)
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-loan-profiles'] });
-      setUserProfileModal({ open: false, userEmail: null });
-      setActionData({ interestRate: "", comments: "", reason: "", accountId: "", customRate: "", maxAmount: "", notes: "" });
-    },
-  });
-
   const bulkApproveMutation = useMutation({
     mutationFn: async (loanIds) => {
       for (const loanId of loanIds) {
-        const loan = loans.find(l => l.id === loanId);
-        await base44.entities.Loan.update(loanId, {
-          status: "APPROVED",
-          approval_date: new Date().toISOString(),
-          approved_by: user?.email,
-        });
+        await authService.approveLoan(loanId);
       }
     },
     onSuccess: () => {
@@ -218,7 +190,7 @@ export default function AdminLoans() {
   };
 
   const getUserProfile = (userEmail) => {
-    return userProfiles.find(p => p.user_email === userEmail);
+    return userProfiles.find((profile) => profile.user_email === userEmail || profile.email === userEmail);
   };
 
   const statusColors = {
@@ -473,12 +445,12 @@ export default function AdminLoans() {
                             <Button
                               size="sm"
                               className="bg-purple-600 hover:bg-purple-700"
-                              onClick={async () => {
-                                const accounts = await base44.entities.Account.filter({ 
-                                  created_by: loan.created_by,
-                                  status: "ACTIVE"
-                                });
-                                setUserAccounts(accounts);
+                              onClick={() => {
+                                setUserAccounts(
+                                  accounts.filter((account) =>
+                                    account.created_by === loan.created_by && account.status === "ACTIVE"
+                                  )
+                                );
                                 setActionModal({ open: true, type: "disburse", loan });
                               }}
                             >
@@ -726,6 +698,19 @@ export default function AdminLoans() {
                   </span>
                 </div>
               </div>
+              {getUserProfile(userProfileModal.userEmail) && (
+                <div className="p-4 bg-indigo-50 rounded-xl">
+                  <p className="text-sm text-indigo-700 font-medium">User profile info</p>
+                  <p className="text-sm text-slate-700 mt-1">
+                    {getUserProfile(userProfileModal.userEmail)?.firstName ||
+                      getUserProfile(userProfileModal.userEmail)?.first_name ||
+                      "User"}{" "}
+                    {getUserProfile(userProfileModal.userEmail)?.lastName ||
+                      getUserProfile(userProfileModal.userEmail)?.last_name ||
+                      ""}
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Custom Interest Rate (%)</Label>
@@ -769,22 +754,9 @@ export default function AdminLoans() {
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={() => userProfileMutation.mutate({
-                userEmail: userProfileModal.userEmail,
-                data: {
-                  custom_interest_rate: actionData.customRate ? parseFloat(actionData.customRate) : null,
-                  max_loan_amount: actionData.maxAmount ? parseFloat(actionData.maxAmount) : null,
-                  notes: actionData.notes,
-                  credit_score: calculateCreditScore(userProfileModal.userEmail)
-                }
-              })}
-              disabled={userProfileMutation.isPending}
+              onClick={() => setUserProfileModal({ open: false, userEmail: null })}
             >
-              {userProfileMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-              ) : (
-                "Save Profile"
-              )}
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -80,6 +80,13 @@ export default function AdminUsers() {
     if (accounts && !Array.isArray(accounts)) console.warn('admin-accounts not array', accounts);
   }, [accounts]);
 
+  const updateUserStatusMutation = useMutation({
+    mutationFn: ({ userId, status }) => authService.updateUserStatus(userId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+  });
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = !searchTerm || 
       getDisplayName(u).toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -203,6 +210,17 @@ export default function AdminUsers() {
                       <DropdownMenuItem onClick={() => setSelectedUser(u)}>
                         View Details
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          updateUserStatusMutation.mutate({
+                            userId: u.id,
+                            status: u.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                          })
+                        }
+                      >
+                        {u.status === "ACTIVE" ? "Deactivate User" : "Activate User"}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </motion.div>
@@ -270,6 +288,12 @@ export default function AdminUsers() {
                   <p className="text-sm text-slate-500">Accounts</p>
                   <p className="font-medium text-slate-900">
                     {getUserAccounts(selectedUser.email).length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Status</p>
+                  <p className="font-medium text-slate-900">
+                    {selectedUser.status || "UNKNOWN"}
                   </p>
                 </div>
                 <div>

@@ -69,23 +69,12 @@ export default function Transactions() {
     if (accounts && !Array.isArray(accounts)) console.warn('accounts not array', accounts);
   }, [accounts]);
 
-  const generateTransactionRef = () => {
-    return 'TXN' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();
-  };
-
   const transactionMutation = useMutation({
     mutationFn: async ({ type, data }) => {
-      // TODO: Replace with actual API calls using authService
-      // This will need to call your backend API endpoints for transactions
-      const account = accounts.find(a => a.id === data.accountId);
-      if (!account) throw new Error("Account not found");
-
-      if (type === "WITHDRAWAL" && account.balance < data.amount) {
-        throw new Error("Insufficient balance");
-      }
-
-      // Placeholder - replace with actual API calls
-      throw new Error("Transaction API endpoints not yet implemented");
+      if (type === "DEPOSIT") return authService.deposit(data);
+      if (type === "WITHDRAWAL") return authService.withdraw(data);
+      if (type === "TRANSFER") return authService.transfer(data);
+      throw new Error("Invalid transaction type");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -131,7 +120,7 @@ export default function Transactions() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'NGN',
     }).format(amount || 0);
   };
 

@@ -222,7 +222,6 @@ export default function Accounts() {
           </form>
         </DialogContent>
       </Dialog>
-
       {/* Transaction Modal */}
       <Dialog 
         open={transactionModal.open} 

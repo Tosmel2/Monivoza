@@ -32,32 +32,23 @@ export default function Dashboard() {
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts', user?.email],
-    queryFn: () => {
-      // TODO: Replace with actual API call using authService
-      // For now, return empty array until API endpoints are implemented
-      return Promise.resolve([]);
-    },
+    queryFn: () => authService.getAccounts(),
     enabled: !!user?.email,
+    select: (data) => (Array.isArray(data) ? data : []),
   });
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions', user?.email],
-    queryFn: () => {
-      // TODO: Replace with actual API call using authService
-      // For now, return empty array until API endpoints are implemented
-      return Promise.resolve([]);
-    },
+    queryFn: () => authService.getTransactions(),
     enabled: !!user?.email,
+    select: (data) => (Array.isArray(data) ? data : []),
   });
 
   const { data: loans = [] } = useQuery({
     queryKey: ['loans', user?.email],
-    queryFn: () => {
-      // TODO: Replace with actual API call using authService
-      // For now, return empty array until API endpoints are implemented
-      return Promise.resolve([]);
-    },
+    queryFn: () => authService.getLoans(),
     enabled: !!user?.email,
+    select: (data) => (Array.isArray(data) ? data : []),
   });
 
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
