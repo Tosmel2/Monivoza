@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://monivoza.onrender.com/api/v1";
+const API_BASE_URL = "https://monivoza.onrender.com/";
 const SESSION_TTL = 24 * 60 * 60 * 1000;
 
 class ApiError extends Error {
