@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   User,
   Mail,
@@ -39,7 +38,7 @@ export default function Settings() {
   }, [navigate]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async () => {
       // TODO: Replace with actual API call using authService
       // This will need to call your backend API endpoint for updating user profile
       throw new Error("User profile update API endpoint not yet implemented");

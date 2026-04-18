@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
 import { authService } from "@/api/authService";
 import {
   Receipt,
@@ -133,7 +132,6 @@ export default function AdminLoans() {
   const calculateCreditScore = (userEmail) => {
     const userLoans = loans.filter(l => l.created_by === userEmail);
     const userAccounts = accounts.filter(a => a.created_by === userEmail);
-    const userTransactions = transactions.filter(t => t.created_by === userEmail);
 
     let score = 50; // Base score
 

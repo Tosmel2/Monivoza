@@ -3,7 +3,6 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { motion } from "framer-motion";
 import {
   Plus,
   Receipt,
@@ -34,7 +33,6 @@ export default function Loans() {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCalculator, setShowCalculator] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState(null);
   const [paymentModal, setPaymentModal] = useState({ open: false, loan: null });
   const queryClient = useQueryClient();
 
@@ -50,10 +48,6 @@ export default function Loans() {
     queryFn: () => authService.getLoans(),
     enabled: !!user?.email,
   });
-
-  const generatePaymentRef = () => {
-    return 'PAY' + Date.now().toString() + Math.random().toString(36).substr(2, 4).toUpperCase();
-  };
 
   const paymentMutation = useMutation({
     mutationFn: async ({ loan, paymentData }) => {
@@ -156,7 +150,6 @@ export default function Loans() {
               key={loan.id}
               loan={loan}
               index={index}
-              onViewDetails={(loan) => setSelectedLoan(loan)}
               onMakePayment={(loan) => setPaymentModal({ open: true, loan })}
             />
           ))}

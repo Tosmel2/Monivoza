@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Loader2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { authService } from "@/api/authService";
 
 export default function TransactionForm({ 
   type, 
@@ -27,9 +29,41 @@ export default function TransactionForm({
     amount: "",
     description: "",
   });
+  const [lookupResult, setLookupResult] = useState(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState(null);
+
+  const handleAccountLookup = async () => {
+    if (!formData.destinationAccountNumber.trim()) {
+      setLookupError("Please enter an account number");
+      setLookupResult(null);
+      return;
+    }
+
+    setIsLookingUp(true);
+    setLookupError(null);
+    setLookupResult(null);
+
+    try {
+      const result = await authService.lookupAccount(formData.destinationAccountNumber);
+      setLookupResult(result);
+    } catch (error) {
+      setLookupError(error.message || "Account not found or lookup failed");
+      setLookupResult(null);
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // For transfers, require successful lookup
+    if (type === "TRANSFER" && !lookupResult) {
+      setLookupError("Please verify the recipient account before proceeding");
+      return;
+    }
+
     onSubmit({
       ...formData,
       amount: parseFloat(formData.amount),
@@ -103,18 +137,65 @@ export default function TransactionForm({
         </div>
 
         {type === "TRANSFER" && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="destination">Destination Account Number</Label>
-            <Input
-              id="destination"
-              type="text"
-              placeholder="Enter recipient's full account number"
-              className="h-12"
-              value={formData.destinationAccountNumber}
-              onChange={(e) => setFormData({ ...formData, destinationAccountNumber: e.target.value })}
-              required
-            />
-            <p className="text-xs text-slate-500">Enter the complete account number of the recipient</p>
+            <div className="flex gap-2">
+              <Input
+                id="destination"
+                type="text"
+                placeholder="Enter recipient's full account number"
+                className="h-12 flex-1"
+                value={formData.destinationAccountNumber}
+                onChange={(e) => {
+                  setFormData({ ...formData, destinationAccountNumber: e.target.value });
+                  setLookupResult(null);
+                  setLookupError(null);
+                }}
+                disabled={isLookingUp || isLoading}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-4"
+                onClick={handleAccountLookup}
+                disabled={isLookingUp || isLoading || !formData.destinationAccountNumber.trim()}
+              >
+                {isLookingUp ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Verify"
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-slate-500">Enter the complete account number and verify before transfer</p>
+
+            {lookupError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{lookupError}</AlertDescription>
+              </Alert>
+            )}
+
+            {lookupResult && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-emerald-50 border border-emerald-200 rounded-lg p-3"
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-emerald-900 text-sm">Account Verified</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">
+                      {lookupResult.account_holder_name || lookupResult.name || "Recipient"}
+                    </p>
+                    <p className="text-xs text-emerald-600 mt-1">
+                      {lookupResult.account_type || "Account"} • {lookupResult.account_number?.slice(-4)}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         )}
 

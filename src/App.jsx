@@ -1,4 +1,5 @@
 
+import React from 'react';
 import './App.css'
 
 import { Toaster } from "@/components/ui/toaster"
@@ -81,7 +82,7 @@ const AuthenticatedApp = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
 
       {/* Protected Routes */}
-      {Object.entries(Pages).map(([path, PageComp]) => (
+      {Object.keys(Pages).map((path) => (
         <Route
           key={path}
           path={`/${path.toLowerCase()}`}
@@ -94,7 +95,7 @@ const AuthenticatedApp = () => {
               )
             ) : (
               <LayoutWrapper currentPageName={path}>
-                <PageComp />
+                {React.createElement(Pages[path])}
               </LayoutWrapper>
             )
           }

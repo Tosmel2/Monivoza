@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/api/authService";
 
@@ -16,12 +16,7 @@ export function AuthProvider({ children }) {
   // initialize auth and set up logout timer reference
   const logoutTimerRef = React.useRef();
 
-  useEffect(() => {
-    initializeAuth();
-    return () => clearTimeout(logoutTimerRef.current);
-  }, []);
-
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
     try {
       if (authService.isAuthenticated()) {
         const userData = await authService.getUser();
@@ -39,7 +34,12 @@ export function AuthProvider({ children }) {
       setIsLoadingAuth(false);
       setIsLoadingPublicSettings(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    initializeAuth();
+    return () => clearTimeout(logoutTimerRef.current);
+  }, [initializeAuth]);
 
   const login = async (email, password) => {
     try {

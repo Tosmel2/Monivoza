@@ -3,7 +3,6 @@ import { getDisplayName, getInitials } from "@/utils";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import {
   Users,

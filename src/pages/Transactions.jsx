@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import {
   ArrowDownLeft,
@@ -34,7 +33,6 @@ import { authService } from "@/api/authService";
 export default function Transactions() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [transactionModal, setTransactionModal] = useState({ open: false, type: null });
